@@ -1,0 +1,22 @@
+{
+  "name": "usage-deck",
+  "owner": {
+    "name": "codeclawd",
+    "url": "https://github.com/codeclawd"
+  },
+  "plugins": [
+    {
+      "name": "usage-deck",
+      "source": "./plugins/usage-deck",
+      "description": "Plan limits, context fill and prompt-cache warmth in one compact animated deck above the prompt",
+      "category": "productivity",
+      "tags": [
+        "mods",
+        "function-hooks",
+        "usage",
+        "quota",
+        "cache"
+      ]
+    }
+  ]
+}

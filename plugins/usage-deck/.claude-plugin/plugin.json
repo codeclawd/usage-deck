@@ -1,0 +1,13 @@
+{
+  "name": "usage-deck",
+  "version": "0.1.3",
+  "description": "Plan limits, context fill and prompt-cache warmth in one compact animated deck above the prompt",
+  "types": "./types/index.d.ts",
+  "author": {
+    "name": "codeclawd",
+    "url": "https://github.com/codeclawd"
+  },
+  "license": "MIT",
+  "homepage": "https://github.com/codeclawd/usage-deck",
+  "repository": "https://github.com/codeclawd/usage-deck"
+}
