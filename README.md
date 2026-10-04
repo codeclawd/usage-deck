@@ -1,25 +1,35 @@
+<div align="center">
+
 # usage-deck
 
-A Claude Code mod that puts your plan limits, context fill and prompt-cache warmth in one compact deck above the prompt, with an animated Clawd that reacts to what Claude is doing.
+**Your Claude Code limits, context and prompt-cache warmth in one glance, with Clawd keeping you company.**
 
-```
- [Clawd]   5-HOUR                 WEEKLY                 CONTEXT
-           ⣿⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒  07%    ⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠒  93%    ⣿⣿⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒  09%
-           resets in 1h56m        resets in 1d19h        93k of 1M · cache 100%  warm 60m
-```
+<img src="assets/deck.gif" alt="usage-deck: animated Clawd typing beside 5-hour, weekly and context meters" width="100%">
 
-## What it shows
+</div>
 
-- **5-hour and weekly limits** with reset countdowns. A window that just reset shows as `new window` instead of vanishing.
-- **Context fill** with tokens used out of the window.
-- **Prompt-cache warmth:** the share of the last turn served from cache, and a countdown until the cache goes cold (green, then yellow under 15 minutes, red under 5). Send something before it hits red and the next turn doesn't pay to rebuild the cache.
-- **Clawd** types while tools run, thinks when a turn goes quiet, bounces when it finishes, looks around and yawns when idle, and dozes after 10 minutes.
+<br>
 
-The deck drops to one row while a turn runs, and steps aside when another mod draws in the same band (image previews, for example).
+## Why
+
+Claude Code tells you about your limits when you're already close to them, and nothing tells you when your prompt cache is about to go cold. usage-deck keeps all of it on screen in one compact band above the prompt:
+
+| | |
+|---|---|
+| **5-hour and weekly limits** | dithered meters, green → yellow at 60% → red at 85%, with reset countdowns |
+| **Context fill** | tokens used out of the window |
+| **Cache warmth** | how much of the last turn came from cache, and a countdown until it goes cold. Send something before it turns red and the next turn doesn't pay to rebuild the cache |
+| **Clawd** | animates with what Claude is doing |
+
+## Clawd's moods
+
+<img src="assets/states.png" alt="Clawd typing, thinking, done, idle, yawning and asleep" width="100%">
+
+Clawd pulls out a laptop and types while tools run, thinks when a turn goes quiet, bounces when a turn finishes, looks around and yawns when idle, and falls asleep after ten minutes.
 
 ## Install
 
-Requires Claude Code 2.1.287 or later (mods are on by default).
+Needs Claude Code 2.1.287 or later (mods are on by default).
 
 ```
 /plugin marketplace add codeclawd/usage-deck
@@ -29,11 +39,25 @@ Requires Claude Code 2.1.287 or later (mods are on by default).
 
 `/deck` hides or shows it.
 
+## Behaves well
+
+- Drops to a single row while a turn is running, so nothing gets cut off.
+- Steps aside when another mod draws in the same band, like image previews.
+- A limit window that just reset shows as `new window` instead of vanishing.
+
 ## Notes
 
-- The cache countdown assumes the 1-hour prompt-cache TTL. Sessions on the 5-minute TTL will see it count down from 60.
+- The cache countdown assumes the 1-hour prompt-cache TTL. On the 5-minute TTL it will still count down from 60.
 - Limits come from the usage Claude Code reports after each turn, refreshed once a minute.
+
+## Credits
+
+- **Clawd** is Claude Code's mascot, created by **[Anthropic](https://www.anthropic.com)**. The sprite and the poses here are hand-drawn for the terminal from Anthropic's own Clawd: the pixel mark and animations on [claude.dev](https://claude.dev) and the working-at-a-laptop animation in the Claude Code app. All credit for the character goes to them.
+- Idle, thinking, yawning and sleeping poses are inspired by [Clawd on Desk](https://github.com/rullerzhou-afk/clawd-on-desk).
+- Built on the [Claude Code mods](https://code.claude.com/docs/en/plugins/mods/overview) API.
+
+This is an unofficial fan project and is not affiliated with or endorsed by Anthropic.
 
 ## License
 
-MIT
+Code: MIT. Clawd belongs to Anthropic.
