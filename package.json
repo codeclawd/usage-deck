@@ -1,0 +1,16 @@
+{
+  "name": "usage-deck",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "typecheck": "node scripts/mod-types.mjs && tsc -p plugins/usage-deck",
+    "test": "claude plugin test plugins/usage-deck"
+  },
+  "devDependencies": {
+    "@anthropic-ai/claude-code": "2.1.322",
+    "typescript": "7.0.2"
+  },
+  "allowScripts": {
+    "@anthropic-ai/claude-code@2.1.322": true
+  }
+}
