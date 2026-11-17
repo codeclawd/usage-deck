@@ -50,6 +50,16 @@ Needs Claude Code 2.1.287 or later (mods are on by default).
 - The cache countdown assumes the 1-hour prompt-cache TTL. On the 5-minute TTL it will still count down from 60.
 - Limits come from the usage Claude Code reports after each turn, refreshed once a minute.
 
+## Develop
+
+```
+npm ci
+npm run typecheck
+npm test
+```
+
+`npm run typecheck` runs `tsc` against the mods API types. When you load the mod with `claude --plugin-dir plugins/usage-deck`, Claude Code writes types for your version into `plugins/usage-deck/.claude-plugin/types/`, and the typecheck uses those. In a fresh clone or CI, `scripts/mod-types.mjs` fetches Anthropic's published copy at a pinned commit instead. `npm test` runs `claude plugin test` with the Claude Code version pinned in `package.json`.
+
 ## Credits
 
 - **Clawd** is Claude Code's mascot, created by **[Anthropic](https://www.anthropic.com)**. The sprite and the poses here are hand-drawn for the terminal from Anthropic's own Clawd: the pixel mark and animations on [claude.dev](https://claude.dev) and the working-at-a-laptop animation in the Claude Code app. All credit for the character goes to them.
