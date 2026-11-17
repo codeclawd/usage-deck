@@ -86,7 +86,7 @@ export function clipFor(s: { working: boolean; nowMs: number; lastToolMs: number
     return s.nowMs - s.lastToolMs > 8_000 ? 'think' : 'typing'
   }
   if (s.nowMs - s.lastActiveMs > 10 * 60_000) return 'doze'
-  return ['look', 'look', 'wave', 'look', 'yawn'][Math.floor(s.nowMs / 4_000) % 5]
+  return ['look', 'look', 'wave', 'look', 'yawn'][Math.floor(s.nowMs / 4_000) % 5] ?? 'look'
 }
 
 // One clip row as Text: fg/bg per segment; a 4th `true` draws it inverse, so the glyph is a hole in the
@@ -190,7 +190,7 @@ export const register: Register = on => {
     return r
   })
 
-  on('command.run', { name: 'deck' }, async $ => {
+  on('command.run', { command: 'deck' }, async $ => {
     const hidden = await read($, isHidden)
     await update($, isHidden, () => !hidden)
     return { text: hidden ? 'usage-deck: shown' : 'usage-deck: hidden (/deck shows it again)' }
@@ -221,6 +221,9 @@ export const register: Register = on => {
     const clip = CLIPS[clipName]
     const once = clipName === 'typing-start' ? turnStartMs : clipName === 'typing-end' ? endStartMs : undefined
     const fi = frameIndex(clipName, nowMs, once)
+    const frameRows = clip?.frames[fi]
+    const faceRow = frameRows?.[clip?.face[fi] ?? -1]
+    if (!frameRows || !faceRow) return below // clipFor and frameIndex name only frames that frames.ts has
 
     // Compact: one row while the engine's spinner squeezes the band: the clip's eye row, so Clawd keeps a face.
     if (e.props.maxRows < 4 || crowded) {
@@ -228,7 +231,7 @@ export const register: Register = on => {
       return (
         <Box flexDirection="column">
           <Box flexDirection="row">
-            <Text>{segsOf(Text, clip.frames[fi][clip.face[fi]])}</Text>
+            <Text>{segsOf(Text, faceRow)}</Text>
             {order.map(m => {
               const b = bar(m.percent, w)
               return (
@@ -247,7 +250,7 @@ export const register: Register = on => {
     }
 
     // Full: Clawd on the left (a space, 16 cells, a gap so props never touch the meters), three columns.
-    const rows = clip.frames[fi].slice(-Math.max(3, e.props.maxRows))
+    const rows = frameRows.slice(-Math.max(3, e.props.maxRows))
     const colW = Math.min(44, Math.floor((cols - 18) / order.length))
     const barW = Math.max(8, Math.min(28, colW - 9))
     return (

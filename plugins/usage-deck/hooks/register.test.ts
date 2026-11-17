@@ -1,3 +1,4 @@
+import type { CommandRunInput, On } from 'claude-code'
 import { test, expect, mock } from 'claude-code/testing'
 import { bar, colorOf, metersOf, untilReset } from './register'
 
@@ -16,7 +17,10 @@ test('meter is 16 dithered cells', () => {
 const BODY = ['#d97757', '#be684d']
 function eyeMarks(row: [string, string | null, string | null, boolean?][]): number {
   const cells = row.flatMap(([s, fg, bg, inv]) => [...s].map(ch => ({ ch, fg, bg, inv: !!inv })))
-  const body = (i: number) => i >= 0 && i < cells.length && cells[i].ch !== ' ' && BODY.includes(cells[i].fg ?? '')
+  const body = (i: number) => {
+    const c = cells[i]
+    return c !== undefined && c.ch !== ' ' && BODY.includes(c.fg ?? '')
+  }
   let n = 0
   cells.forEach((c, i) => {
     if (c.inv && (c.ch === '▂' || c.ch === '^')) n += 1
@@ -32,7 +36,9 @@ test('every clawd frame is 4 rows of 16 cells and keeps a face', () => {
     clip.frames.forEach((f, i) => {
       expect(f.length).toBe(4)
       for (const row of f) expect(row.reduce((a, [s]) => a + [...s].length, 0)).toBe(16)
-      if (eyeMarks(f[clip.face[i]] as never) < 2) throw new Error(`${name}[${i}] has no face`)
+      const face = clip.face[i]
+      const row = face === undefined ? undefined : f[face]
+      if (!row || eyeMarks(row) < 2) throw new Error(`${name}[${i}] has no face`)
     })
   }
 })
@@ -42,11 +48,17 @@ test('countdown and meters', () => {
   expect(untilReset('2026-10-04T03:03:00Z', now)).toBe('3h3m')
   const ms = metersOf({ startedAt: 0, rateLimits: [{ kind: 'five_hour', percentUsed: 3 }, { kind: 'seven_day', percentUsed: 91 }], context: { tokens: 407_000, window: 1_000_000, percent: 40.7 } } as never, now)
   expect(ms.map(m => m.label)).toEqual(['5H', '7D', 'CTX'])
-  expect(ms[2].note).toBe('407k / 1M')
+  expect(ms[2]?.note).toBe('407k / 1M')
 })
 
 import { clipFor, clipMs, frameIndex, isEmpty } from './register'
 import { CLIPS } from './frames'
+
+function clipNamed(name: string) {
+  const clip = CLIPS[name]
+  if (!clip) throw new Error(`no clip named ${name}`)
+  return clip
+}
 
 test('clawd plays the right clip for the state', () => {
   const base = { working: false, nowMs: 100_000, lastToolMs: 99_000, lastActiveMs: 90_000, happyUntilMs: 0, turnStartMs: 90_000 }
@@ -67,8 +79,9 @@ test('clawd plays the right clip for the state', () => {
   expect(clipFor({ ...base, working: true, turnStartMs: 50_000, lastActiveMs: 60_000 })).toBe('walk')
   expect(clipFor({ ...base, nowMs: 8_000, lastActiveMs: 7_000, turnStartMs: 7_000 })).toBe('wave')
   for (const name of ['typing', 'typing-start', 'typing-end', 'think', 'happy', 'doze', 'look', 'yawn', 'wave', 'walk']) {
-    expect(CLIPS[name].frames.length).toBeGreaterThan(3)
-    expect(frameIndex(name, 123_456)).toBeLessThan(CLIPS[name].frames.length)
+    const clip = clipNamed(name)
+    expect(clip.frames.length).toBeGreaterThan(3)
+    expect(frameIndex(name, 123_456)).toBeLessThan(clip.frames.length)
   }
 })
 
@@ -89,7 +102,7 @@ test('cache warmth counts down the 1h TTL', () => {
 })
 
 test('one-shot clips play once from their start and hold the last frame', () => {
-  const n = CLIPS['typing-start'].frames.length
+  const n = clipNamed('typing-start').frames.length
   expect(frameIndex('typing-start', 5_000, 5_000)).toBe(0)
   expect(frameIndex('typing-start', 5_100, 5_000)).toBe(1)
   expect(frameIndex('typing-start', 60_000, 5_000)).toBe(n - 1)
@@ -109,14 +122,14 @@ const BAND = {
   component: 'AbovePrompt',
   requestId: 'above-prompt',
   viewport: { columns: 120, rows: 40 },
-  props: { hasSurvey: false, isWorking: false, maxRows: 20, bodyColumns: 120, scroll: { offset: 0, bodyRows: 20 }, view: {} },
+  props: { hasSurvey: false, isCollapsed: false, isWorking: false, maxRows: 20, bodyColumns: 120, scroll: { offset: 0, bodyRows: 20 }, view: {} },
 } as const
 const USAGE = { startedAt: 0, rateLimits: [{ kind: 'five_hour', percentUsed: 3 }, { kind: 'seven_day', percentUsed: 41 }] }
 // A tall tree from another plugin (image-view's tiles), standing as the rest of the AbovePrompt chain.
 const TILES = { type: 'Box', props: { flexDirection: 'column' }, children: Array.from({ length: 9 }, (_, i) => ({ type: 'Text', props: {}, children: [`tile row ${i}`] })) }
 
-function band(on: Parameters<Parameters<typeof test>[1] & ((...a: never[]) => unknown)>[1], below: unknown) {
-  mock.clock(on as never)
+function band(on: On, below: unknown) {
+  mock.clock(on)
   on('session.start', () => ({ cwd: '/work' }))
   on('session.usage', () => ({ value: USAGE }) as never)
   on('command.register', () => ({ value: undefined }) as never)
@@ -146,5 +159,17 @@ test('beside another plugin\'s tree the deck shrinks to one row, or steps aside 
 test('a window missing from usage still shows as a fresh row', () => {
   const ms = metersOf({ startedAt: 0, rateLimits: [{ kind: 'seven_day', percentUsed: 93 }], context: { tokens: 1000, window: 1_000_000, percent: 0.1 } } as never, 0)
   expect(ms.map(m => m.label)).toEqual(['5H', '7D', 'CTX'])
-  expect(ms[0].note).toBe('new window')
+  expect(ms[0]?.note).toBe('new window')
+})
+
+// A command the person types at the prompt.
+const typed = (command: string): CommandRunInput => ({ command, args: '', origin: { kind: 'composer' }, presentation: { isFullscreen: false, columns: 120 } })
+
+test('/deck hides and shows the deck, and leaves other commands to the rest of the chain', async ($, on) => {
+  band(on, { type: 'Box', props: {}, children: [] })
+  on('command.run', () => ({ text: 'from below' }))
+  await $.session.start({ surface: 'terminal', isInteractive: true, cwd: '/work' })
+  expect((await $.command.run(typed('deck'))).text).toBe('usage-deck: hidden (/deck shows it again)')
+  expect((await $.command.run(typed('deck'))).text).toBe('usage-deck: shown')
+  expect((await $.command.run(typed('help'))).text).toBe('from below')
 })
